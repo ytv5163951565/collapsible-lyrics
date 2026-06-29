@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sadi Gali - Interactive Lyrics</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            
+            /* Background setups */
+            --verse-bg: #1e293b;
+            --chorus-bg: #0f172a;
+            
+            /* Text defaults */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+
+            /* Verse Line Palette */
+            --line-A: #38bdf8; /* Bright Sky Blue */
+            --line-B: #f43f5e; /* Vivid Coral Pink */
+            --line-C: #a855f7; /* Intense Purple */
+            --line-D: #34d399; /* Vibrant Mint Green */
+            --line-E: #fb923c; /* Bright Orange */
+
+            /* Chorus Line Palette */
+            --chorus-blue-light: #38bdf8; /* Existing Sky Blue */
+            --chorus-blue-dark: #1d4ed8;  /* Defined Darker Blue with strong legibility */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--text-main);
+            background-color: var(--bg-color);
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            /* Added smooth scrolling globally for a cleaner transition */
+            scroll-behavior: smooth;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .table-container {
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background-color: #020617;
+            padding: 20px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 24px 20px;
+            vertical-align: top;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Toggle Region Mechanics */
+        .toggle-row {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .verse-row td {
+            background-color: var(--verse-bg);
+            position: relative;
+            transition: background-color 0.2s ease, padding 0.2s ease;
+        }
+
+        .verse-row:hover td {
+            background-color: #243146;
+        }
+
+        .chorus-row:hover td {
+            background-color: #17223b;
+        }
+
+        /* Expander/Collapse Indicator placement */
+        .verse-row td:first-child::before {
+            content: '▼';
+            position: absolute;
+            left: 8px;
+            top: 28px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        /* Collapsed Structural Cleanups */
+        .verse-row.collapsed-state td {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            background-color: #131b26;
+        }
+
+        .verse-row.collapsed-state td:first-child::before {
+            transform: rotate(-90deg);
+            color: var(--accent);
+            top: 16px;
+        }
+
+        .chorus-row td {
+            background-color: var(--chorus-bg);
+            border-top: 2px solid #0284c7;
+            border-bottom: 2px solid #0284c7;
+            transition: padding 0.2s ease;
+        }
+
+        /* Clean utilities to hard wipe contents entirely */
+        .hidden-row {
+            display: none !important;
+        }
+        
+        .hidden-text {
+            display: none !important;
+        }
+
+        /* Structural block setups */
+        .lyrics-block {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            font-size: 1.05rem;
+        }
+
+        /* Distinct high-contrast color rotation for sequential pairs */
+        .verse-row .line-1 { color: var(--line-A); }
+        .verse-row .line-2 { color: var(--line-B); }
+        .verse-row .line-3 { color: var(--line-C); }
+        .verse-row .line-4 { color: var(--line-D); }
+        .verse-row .line-5 { color: var(--line-E); }
+
+        .verse-row .translation-block span {
+            font-style: italic;
+        }
+
+        /* Alternating Chorus Styles */
+        .chorus-row .c-light {
+            color: var(--chorus-blue-light) !important;
+            font-weight: 600;
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+        }
+
+        .chorus-row .c-dark {
+            color: var(--chorus-blue-dark) !important;
+            font-weight: 600;
+        }
+
+        .chorus-row .translation-block .c-light {
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        .chorus-row .translation-block .c-dark {
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        /* Outro Row Structures */
+        .outro-row td {
+            background-color: #141b2b;
+            border-top: 2px solid #ea580c;
+            border-bottom: 2px solid #ea580c;
+        }
+        .outro-row .lyrics-block span { color: #ffedd5; }
+        .outro-row .translation-block span { color: #cbd5e1; font-style: italic; }
+
+        /* Tags UI layout */
+        .tag {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .verse-tag { background-color: #475569; color: #f8fafc; border: 1px solid #64748b; }
+        .chorus-tag { background-color: #0284c7; color: #ffffff; border: 1px solid #38bdf8; }
+        .outro-tag { background-color: #ea580c; color: #ffffff; border: 1px solid #f97316; }
+
+        @media (max-width: 768px) {
+            body { padding: 20px 10px; }
+            th, td { padding: 16px 12px; }
+            .verse-row td:first-child::before { top: 20px; }
+            .verse-row.collapsed-state td:first-child::before { top: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Sadi Gali</h1>
+    <p>Collapsible Lyrics</p>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 15%; padding-left: 25px;">Section</th>
+                <th style="width: 42.5%;">Original Punjabi Lyrics</th>
+                <th style="width: 42.5%;">English Translation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Group 1 -->
+            <tr class="verse-row toggle-row" data-group="1">
+                <td style="padding-left: 25px;"><span class="tag verse-tag">Verse 1</span></td>
+                <td><div class="lyrics-block">
+                    <span class="line-1">Kudiyan de vich phire hassdi khed di</span>
+                    <span class="line-2">Hassdi, hassdi, hassdi, hassdi khed di</span>
+                    <span class="line-3">Ho gutt di parandi teri naag wangu meldi</span>
+                    <span class="line-4">Naag, naag, naag, naag wangu meldi</span>
+                    <span>&nbsp;</span>
+                    <span class="line-5">Kudiyan de vich phire hassdi khed di</span>
+                    <span class="line-1">College na jaave ni tu naag wangu meldi</span>
+                    <span class="line-2">Aashiqan nu darshan dikhaya karo</span>
+                </div></td>
+                <td><div class="lyrics-block translation-block">
+                    <span class="line-1">You go around laughing and playing among the girls</span>
+                    <span class="line-2">Laughing, laughing, laughing, playing</span>
+                    <span class="line-3">The tassel (parandi) in your hair braid sways like a cobra</span>
+                    <span class="line-4">Like a cobra, cobra, cobra, swaying</span>
+                    <span>&nbsp;</span>
+                    <span class="line-5">You go around laughing and playing among the girls</span>
+                    <span class="line-1">You don't even go to college, just swaying like a cobra</span>
+                    <span class="line-2">At least bless your lovers with a glimpse of you</span>
+                </div></td>
+            </tr>
+            <tr class="chorus-row toggle-row" data-group="1">
+                <td style="padding-left: 25px;"><span class="tag chorus-tag">Chorus</span></td>
+                <td><div class="lyrics-block">
+                    <span class="c-light">Ni kadi sadi gali bhul ke vi</span>
+                    <span class="c-dark">Aaya karo ji kade saddi gali bhul ke vi</span>
+                    <span class="c-light">Aaya karo ji kade saddi gali bhul ke vi</span>
+                    <span class="c-dark">Aaya karo ji kade saddi gali bhul ke vi</span>
+                </div></td>
+                <td><div class="lyrics-block translation-block">
+                    <span class="c-light">Hey, even by mistake sometimes</span>
+                    <span class="c-dark">Please drop by our street sometimes, even if just by mistake</span>
+                    <span class="c-light">Please drop by our street sometimes, even if just by mistake</span>
+                    <span class="c-dark">Please drop by our street sometimes, even if just by mistake</span>
+                </div></td>
+            </tr>
+
+            <!-- Group 2 -->
+            <tr class="verse-row toggle-row" data-group="2">
+                <td style="padding-left: 25px;"><span class="tag verse-tag">Verse 2</span></td>
+                <td><div class="lyrics-block">
+                    <span class="line-1">Goriyan gallan ch tere toye badey pabhde</span>
+                    <span class="line-2">Toye, toye, toye, toye badey pabhde</span>
+                    <span class="line-3">Mitran pyaaran nu sohne badey lagde</span>
+                    <span class="line-4">Sohne, sohne, sohne, sohne badey lagde</span>
+                    <span>&nbsp;</span>
+                    <span class="line-5">Goriyan gallan ch tere toye badey pabhde</span>
+                    <span class="line-1">Mitran pyaaran nu sohne badey lagde</span>
+                    <span class="line-2">Thoda saade utte taras bhi khaya karo</span>
+                </div></td>
+                <td><div class="lyrics-block translation-block">
+                    <span class="line-1">The dimples in your fair cheeks look so beautiful on you</span>
+                    <span class="line-2">Dimples, dimples, dimples, looking so good</span>
+                    <span class="line-3">To your close friends, they look incredibly lovely</span>
+                    <span class="line-4">Lovely, lovely, lovely, looking so lovely</span>
+                    <span>&nbsp;</span>
+                    <span class="line-5">The dimples in your fair cheeks look so beautiful on you</span>
+                    <span class="line-1">To your close friends, they look incredibly lovely</span>
+                    <span class="line-2">Take a little bit of pity on us too</span>
+                </div></td>
+            </tr>
+            <tr class="chorus-row toggle-row" data-group="2">
+                <td style="padding-left: 25px;"><span class="tag chorus-tag">Chorus</span></td>
+                <td><div class="lyrics-block">
+                    <span class="c-light">Ni kadi sadi gali bhul ke vi</span>
+                    <span class="c-dark">Aaya karo ji kade saddi gali bhul ke vi</span>
+                    <span class="c-light">Aaya karo ji kade saddi gali bhul ke vi</span>
+                    <span class="c-dark">Aaya karo ji kade saddi gali bhul ke vi</span>
+                </div></td>
+                <td><div class="lyrics-block translation-block">
+                    <span class="c-light">Hey, even by mistake sometimes</span>
+                    <span class="c-dark">Please drop by our street sometimes, even if just by mistake</span>
+                    <span class="c-light">Please drop by our street sometimes, even if just by mistake</span>
+                    <span class="c-dark">Please drop by our street sometimes, even if just by mistake</span>
+                </div></td>
+            </tr>
+
+            <!-- Group 3 -->
+            <tr class="verse-row toggle-row" data-group="3">
+                <td style="padding-left: 25px;"><span class="tag verse-tag">Verse 3</span></td>
+                <td><div class="lyrics-block">
+                    <span class="line-1">Jidro vi lange munde maarde seetiyan</span>
+                    <span class="line-2">Maarde, maarde, maarde, maarde seetiyan</span>
+                    <span class="line-3">Ho kar de ishaare koi maarda geetiyan</span>
+                    <span class="line-4">Maarde, maarde, maarde, maarde geetiyan</span>
+                    <span>&nbsp;</span>
+                    <span class="line-5">Jidro vi lange munde maarde seetiyan</span>
+                    <span class="line-1">Kar de ishaare koi maarda geetiyan</span>
+                    <span class="line-2">Sajna nu aina na sataya karo</span>
+                </div></td>
+                <td><div class="lyrics-block translation-block">
+                    <span class="line-1">Wherever you pass by, the boys whistle</span>
+                    <span class="line-2">Whistling, whistling, whistling, whistling</span>
+                    <span class="line-3">They make gestures, and some throw pebbles to get your attention</span>
+                    <span class="line-4">Throwing, throwing, throwing pebbles</span>
+                    <span>&nbsp;</span>
+                    <span class="line-5">Wherever you pass by, the boys whistle</span>
+                    <span class="line-1">They make gestures, and some throw pebbles</span>
+                    <span class="line-2">Don't torture your beloved this much</span>
+                </div></td>
+            </tr>
+            <tr class="chorus-row toggle-row" data-group="3">
+                <td style="padding-left: 25px;"><span class="tag chorus-tag">Chorus</span></td>
+                <td><div class="lyrics-block">
+                    <span class="c-light">Ni kadi sadi gali bhul ke vi</span>
+                    <span class="c-dark">Aaya karo ji kade saddi gali bhul ke vi</span>
+                </div></td>
+                <td><div class="lyrics-block translation-block">
+                    <span class="c-light">Hey, even by mistake sometimes</span>
+                    <span class="c-dark">Please drop by our street sometimes, even if just by mistake</span>
+                </div></td>
+            </tr>
+
+            <!-- Group 4 -->
+            <tr class="verse-row toggle-row" data-group="4">
+                <td style="padding-left: 25px;"><span class="tag verse-tag">Verse 4</span></td>
+                <td><div class="lyrics-block">
+                    <span class="line-1">Rab ne husn ditta maan nai karida</span>
+                    <span class="line-2">Maan, maan, maan, maan nai karida</span>
+                    <span class="line-3">Aakkadan di agg vich ainwe nai sadee da</span>
+                    <span class="line-4">Ainwe, ainwe, ainwe, ainwe nai sadee da</span>
+                    <span>&nbsp;</span>
+                    <span class="line-5">Rab ne husn ditta maan nai kari da</span>
+                    <span class="line-1">Aakkadan di agg vich ainwe nai sadee da</span>
+                    <span class="line-2">Kade pyaar wala meeh barsaya karo</span>
+                </div></td>
+                <td><div class="lyrics-block translation-block">
+                    <span class="line-1">God gave you beauty, but you shouldn't be proud/arrogant about it</span>
+                    <span class="line-2">Proud, proud, proud, don't be so proud</span>
+                    <span class="line-3">Don't burn yourself up in the fire of your own attitude for no reason</span>
+                    <span class="line-4">Just like that, don't burn for no reason</span>
+                    <span>&nbsp;</span>
+                    <span class="line-5">God gave you beauty, but you shouldn't be arrogant about it</span>
+                    <span class="line-1">Don't burn yourself up in the fire of your own attitude for no reason</span>
+                    <span class="line-2">Shower us with the rain of your love sometimes</span>
+                </div></td>
+            </tr>
+            <tr class="chorus-row toggle-row" data-group="4">
+                <td style="padding-left: 25px;"><span class="tag chorus-tag">Chorus</span></td>
+                <td><div class="lyrics-block">
+                    <span class="c-light">Ni kadi sadi gali bhul ke vi</span>
+                    <span class="c-dark">Aaya karo ji kade saddi gali bhul ke vi</span>
+                    <span class="c-light">Aaya karo ji kade saddi gali bhul ke vi</span>
+                    <span class="c-dark">Aaya karo ji kade saddi gali bhul ke vi</span>
+                </div></td>
+                <td><div class="lyrics-block translation-block">
+                    <span class="c-light">Hey, even by mistake sometimes</span>
+                    <span class="c-dark">Please drop by our street sometimes, even if just by mistake</span>
+                    <span class="c-light">Please drop by our street sometimes, even if just by mistake</span>
+                    <span class="c-dark">Please drop by our street sometimes, even if just by mistake</span>
+                </div></td>
+            </tr>
+
+            <!-- Group 5 -->
+            <tr class="verse-row toggle-row" data-group="5">
+                <td style="padding-left: 25px;"><span class="tag verse-tag">Verse 5</span></td>
+                <td><div class="lyrics-block">
+                    <span class="line-1">Lehmber na ban jana tera manmeet ni</span>
+                    <span class="line-2">Tera, tera, tera, tera manmeet ni</span>
+                    <span class="line-3">Sacchi sacchi ohde naal pala tu preet ni</span>
+                    <span class="line-4">Pala, pala, pala, pala tu preet ni</span>
+                    <span>&nbsp;</span>
+                    <span class="line-5">Lehmber na ban jana tera manmeet ni</span>
+                    <span class="line-1">Sacchi sacchi ohde naal pala tu preet ni</span>
+                    <span class="line-2">Saareyan nu mangar na laaya karo</span>
+                </div></td>
+                <td><div class="lyrics-block translation-block">
+                    <span class="line-1">Won't Lehmber (the singer) become your soulmate?</span>
+                    <span class="line-2">Your, your, your soulmate</span>
+                    <span class="line-3">Truly fall in love with him</span>
+                    <span class="line-4">Fall, fall, fall in love</span>
+                    <span>&nbsp;</span>
+                    <span class="line-5">Won't Lehmber become your soulmate?</span>
+                    <span class="line-1">Truly fall in love with him</span>
+                    <span class="line-2">Stop making everyone chase after you like this</span>
+                </div></td>
+            </tr>
+            <tr class="chorus-row toggle-row" data-group="5">
+                <td style="padding-left: 25px;"><span class="tag chorus-tag">Chorus</span></td>
+                <td><div class="lyrics-block">
+                    <span class="c-light">Ni kadi sadi gali bhul ke vi</span>
+                    <span class="c-dark">Aaya karo ji kade saddi gali bhul ke vi</span>
+                    <span class="c-light">Aaya karo ji kade saddi gali bhul ke vi</span>
+                    <span class="c-dark">Aaya karo ji kade saddi gali bhul ke vi</span>
+                </div></td>
+                <td><div class="lyrics-block translation-block">
+                    <span class="c-light">Hey, even by mistake sometimes</span>
+                    <span class="c-dark">Please drop by our street sometimes, even if just by mistake</span>
+                    <span class="c-light">Please drop by our street sometimes, even if just by mistake</span>
+                    <span class="c-dark">Please drop by our street sometimes, even if just by mistake</span>
+                </div></td>
+            </tr>
+
+            <!-- Outro Section -->
+            <tr class="outro-row">
+                <td style="padding-left: 25px;"><span class="tag outro-tag">Outro</span></td>
+                <td><div class="lyrics-block">
+                    <span>Aaya karo ji kade saddi gali bhul ke vi</span>
+                    <span>Aaya karo ji kade saddi gali bhul ke vi</span>
+                    <span>Aaya karo ji kade saddi gali bhul ke vi</span>
+                    <span>Aaya karo ji kade saddi gali bhul ke vi</span>
+                </div></td>
+                <td><div class="lyrics-block translation-block">
+                    <span>Please drop by our street sometimes, even if just by mistake</span>
+                    <span>Please drop by our street sometimes, even if just by mistake</span>
+                    <span>Please drop by our street sometimes, even if just by mistake</span>
+                    <span>Please drop by our street sometimes, even if just by mistake</span>
+                </div></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const interactiveRows = document.querySelectorAll('.toggle-row');
+        
+        interactiveRows.forEach(row => {
+            row.addEventListener('click', () => {
+                const groupId = row.getAttribute('data-group');
+                
+                const matchingVerse = document.querySelector(`.verse-row[data-group="${groupId}"]`);
+                const matchingChorus = document.querySelector(`.chorus-row[data-group="${groupId}"]`);
+                
+                if (matchingVerse && matchingChorus) {
+                    const transitioningToExpanded = matchingVerse.classList.contains('collapsed-state');
+                    
+                    if (transitioningToExpanded) {
+                        // Expanding: Show elements
+                        matchingVerse.classList.remove('collapsed-state');
+                        matchingVerse.querySelectorAll('.lyrics-block').forEach(b => b.classList.remove('hidden-text'));
+                        matchingChorus.classList.remove('hidden-row');
+                        
+                        // Navigate smooth viewport shift to alignment top of the target verse block
+                        matchingVerse.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                        // Collapsing: Hide elements
+                        matchingVerse.classList.add('collapsed-state');
+                        matchingVerse.querySelectorAll('.lyrics-block').forEach(b => b.classList.add('hidden-text'));
+                        matchingChorus.classList.add('hidden-row');
+                    }
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
